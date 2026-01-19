@@ -39,3 +39,6 @@ func (s *UserService) RegisterOrGet(tgID int64, username string, languagePref st
 	}
 	return newUser, nil
 }
+func (s *UserService) UpdateLanguage(tgID int64, newLang string) error {
+    return s.repo.UpdateLanguage(tgID, newLang)
+}

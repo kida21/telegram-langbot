@@ -24,6 +24,26 @@ func NewHandler(us *services.UserService, vs *services.VocabularyService, qs *se
 	}
 }
 
+func (h *Handler) HandleUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	if update.Message == nil {
+		return
+	}
+
+	switch update.Message.Command() {
+	case "start":
+		h.handleStart(bot, update)
+	case "word":
+		h.handleWord(bot, update)
+	case "quiz":
+		h.handleQuiz(bot, update)
+	case "progress":
+		h.handleProgress(bot, update)
+	default:
+		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command. Try /start, /word, /quiz, /progress"))
+	}
+}
+
+
 func (h *Handler) handleStart(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	tgID := update.Message.From.ID
 	username := update.Message.From.UserName

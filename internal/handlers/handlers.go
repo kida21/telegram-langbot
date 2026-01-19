@@ -25,22 +25,29 @@ func NewHandler(us *services.UserService, vs *services.VocabularyService, qs *se
 }
 
 func (h *Handler) HandleUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	if update.Message == nil {
-		return
-	}
+    if update.Message == nil {
+        return
+    }
 
-	switch update.Message.Command() {
-	case "start":
-		h.handleStart(bot, update)
-	case "word":
-		h.handleWord(bot, update)
-	case "quiz":
-		h.handleQuiz(bot, update)
-	case "progress":
-		h.handleProgress(bot, update)
-	default:
-		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command. Try /start, /word, /quiz, /progress"))
-	}
+    cmd := update.Message.Command()
+    if cmd != "" {
+        switch cmd {
+        case "start":
+            h.handleStart(bot, update)
+        case "word":
+            h.handleWord(bot, update)
+        case "quiz":
+            h.handleQuiz(bot, update)
+        case "progress":
+            h.handleProgress(bot, update)
+        default:
+            bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command."))
+        }
+        return
+    }
+
+    
+    h.handleText(bot, update)
 }
 
 
@@ -114,4 +121,26 @@ func (h *Handler) handleProgress(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	}
 	text := fmt.Sprintf("Attempts: %d\nCorrect: %d\nAccuracy: %.2f%%", attempts, correct, accuracy)
 	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, text))
+}
+
+func (h *Handler) handleText(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+    lang := strings.TrimSpace(update.Message.Text)
+    validLangs := []string{"Spanish", "French", "German", "Italian", "Japanese"}
+
+    for _, l := range validLangs {
+        if lang == l {
+            tgID := update.Message.From.ID
+            username := update.Message.From.UserName
+            user, err := h.userService.RegisterOrGet(tgID, username, lang)
+            if err != nil {
+                bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Error registering: "+err.Error()))
+                return
+            }
+            bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID,
+                fmt.Sprintf("Welcome %s! You’ll now learn %s. Try /word or /quiz to begin.", user.Username, user.LanguagePref)))
+            return
+        }
+    }
+
+    bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Please choose a valid language option."))
 }

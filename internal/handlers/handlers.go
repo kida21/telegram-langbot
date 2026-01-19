@@ -85,3 +85,13 @@ func (h *Handler) handleQuiz(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, quiz.Question+"\nOptions: "+quiz.Options)
 	bot.Send(msg)
 }
+
+func (h *Handler) handleProgress(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	attempts, correct, accuracy, err := h.progressService.GetUserStats(update.Message.From.ID)
+	if err != nil {
+		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Error fetching progress."))
+		return
+	}
+	text := fmt.Sprintf("Attempts: %d\nCorrect: %d\nAccuracy: %.2f%%", attempts, correct, accuracy)
+	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, text))
+}

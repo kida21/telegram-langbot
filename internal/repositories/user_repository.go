@@ -26,3 +26,8 @@ func (r *UserRepository) Create(user *models.User) error {
 	return r.db.Create(user).Error
 }
 
+func (r *UserRepository) UpdateLanguage(tgID int64, newLang string) error {
+    return r.db.Model(&models.User{}).
+        Where("telegram_id = ?", tgID).
+        Update("language_pref", newLang).Error
+}

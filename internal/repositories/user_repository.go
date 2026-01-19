@@ -12,9 +12,10 @@ type UserRepository struct {
 func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
-func (r *UserRepository) GetByID(userID int64) (*models.User, error) {
+
+func (r *UserRepository) GetByTelegramID(tgID int64) (*models.User, error) {
 	var user models.User
-	result := r.db.First(&user, "user_id = ?", userID)
+	result := r.db.First(&user, "telegram_id = ?", tgID)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -24,3 +25,4 @@ func (r *UserRepository) GetByID(userID int64) (*models.User, error) {
 func (r *UserRepository) Create(user *models.User) error {
 	return r.db.Create(user).Error
 }
+

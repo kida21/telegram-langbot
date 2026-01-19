@@ -5,8 +5,7 @@ import (
 	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/joho/godotenv"
-	"github.com/kida21/telegram-langbot/config"
+    "github.com/kida21/telegram-langbot/config"
 	"github.com/kida21/telegram-langbot/db"
 	"github.com/kida21/telegram-langbot/internal/bot"
 	"github.com/kida21/telegram-langbot/internal/handlers"
@@ -16,11 +15,7 @@ import (
 
 func main() {
 	
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, relying on system environment variables")
-	}
-
-    cfg := config.LoadConfig()
+	cfg := config.LoadConfig()
     db.InitDatabase(cfg)
 
 	token := os.Getenv("TELEGRAM_BOT_TOKEN")

@@ -75,3 +75,13 @@ func (h *Handler) handleWord(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	text := fmt.Sprintf("Word: %s\nTranslation: %s\nExample: %s", vocab.Word, vocab.Translation, vocab.Example)
 	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, text))
 }
+
+func (h *Handler) handleQuiz(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	quiz, err := h.quizService.GetRandomQuiz()
+	if err != nil {
+		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "No quizzes available."))
+		return
+	}
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, quiz.Question+"\nOptions: "+quiz.Options)
+	bot.Send(msg)
+}

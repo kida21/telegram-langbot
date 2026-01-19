@@ -65,3 +65,13 @@ func (h *Handler) handleStart(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		}
 	}
 }
+
+func (h *Handler) handleWord(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	vocab, err := h.vocabService.GetWordOfTheDay()
+	if err != nil {
+		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "No vocabulary found."))
+		return
+	}
+	text := fmt.Sprintf("Word: %s\nTranslation: %s\nExample: %s", vocab.Word, vocab.Translation, vocab.Example)
+	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, text))
+}

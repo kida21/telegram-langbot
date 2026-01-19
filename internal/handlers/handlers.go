@@ -40,6 +40,8 @@ func (h *Handler) HandleUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
             h.handleQuiz(bot, update)
         case "progress":
             h.handleProgress(bot, update)
+		case "setlanguage":
+            h.handleSetLanguage(bot, update)
         default:
             bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command."))
         }
@@ -143,4 +145,20 @@ func (h *Handler) handleText(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
     }
 
     bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Please choose a valid language option."))
+}
+
+func (h *Handler) handleSetLanguage(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+    msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Choose your new learning language:")
+    msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
+        tgbotapi.NewKeyboardButtonRow(
+            tgbotapi.NewKeyboardButton("Spanish"),
+            tgbotapi.NewKeyboardButton("French"),
+            tgbotapi.NewKeyboardButton("German"),
+        ),
+        tgbotapi.NewKeyboardButtonRow(
+            tgbotapi.NewKeyboardButton("Italian"),
+            tgbotapi.NewKeyboardButton("Japanese"),
+        ),
+    )
+    bot.Send(msg)
 }

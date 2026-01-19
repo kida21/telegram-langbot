@@ -30,9 +30,10 @@ func main() {
 	quizRepo := repositories.NewQuizRepository(db.DB)
 	progressRepo := repositories.NewProgressRepository(db.DB)
 
+
 	
 	userService := services.NewUserService(userRepo)
-	vocabService := services.NewVocabularyService(vocabRepo)
+	vocabService := services.NewVocabularyService(vocabRepo,cfg.Libretranslate_Url)
 	quizService := services.NewQuizService(quizRepo)
 	progressService := services.NewProgressService(progressRepo)
 

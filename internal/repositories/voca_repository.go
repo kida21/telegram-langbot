@@ -21,3 +21,13 @@ func (r *VocabularyRepository) GetRandom() (*models.Vocabulary, error) {
 	}
 	return &vocab, nil
 }
+func (r *VocabularyRepository) Insert(word, translation, example string) error {
+    vocab := models.Vocabulary{
+        Word:        word,
+        Translation: translation,
+        Example:     example,
+        Difficulty:  1, // default
+
+    }
+    return r.db.Create(&vocab).Error
+}

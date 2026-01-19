@@ -2,8 +2,8 @@ services:
   bot:
     build: .
     container_name: telegram-langbot
-    restart: always
     depends_on:
+      - libretranslate
       - db
     env_file:
       - ./.env
@@ -22,6 +22,18 @@ services:
       - db_data:/var/lib/postgresql/data
     networks:
       - botnet
+  libretranslate:
+    image: libretranslate/libretranslate
+    container_name: libretranslate
+    ports:
+    - "5000:5000"
+    environment:
+    - LT_LOAD_ONLY=en,es,fr,de,it,ja
+   
+
+    networks:
+      - botnet
+
 
 networks:
   botnet:

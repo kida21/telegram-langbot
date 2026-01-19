@@ -42,6 +42,8 @@ func (h *Handler) HandleUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
             h.handleProgress(bot, update)
 		case "setlanguage":
             h.handleSetLanguage(bot, update)
+		case "importword":
+			h.handleImportWord(bot,update)
         default:
             bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command."))
         }
@@ -161,4 +163,27 @@ func (h *Handler) handleSetLanguage(bot *tgbotapi.BotAPI, update tgbotapi.Update
         ),
     )
     bot.Send(msg)
+}
+
+
+func (h *Handler) handleImportWord(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+    args := strings.Fields(update.Message.Text)
+    if len(args) < 3 {
+        bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID,
+            "Usage: /importword <word> <source-lang> <target-lang>. Example: /importword hello en es"))
+        return
+    }
+
+    word := args[1]
+    source := args[2]
+    target := args[3]
+
+    err := h.vocabService.FetchAndStore(word, source, target)
+    if err != nil {
+        bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Error importing word: "+err.Error()))
+        return
+    }
+
+    bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID,
+        fmt.Sprintf("Word '%s' imported successfully with translation (%s → %s).", word, source, target)))
 }

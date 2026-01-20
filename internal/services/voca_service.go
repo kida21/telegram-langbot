@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -12,9 +13,8 @@ import (
 )
 
 type VocabularyService struct {
-	repo *repositories.VocabularyRepository
-	apiBaseURL string
-
+    repo       *repositories.VocabularyRepository
+    apiBaseURL string
 }
 
 type geminiResponse struct {
@@ -27,8 +27,6 @@ type geminiResponse struct {
     } `json:"candidates"`
 }
 
-
-
 func NewVocabularyService(repo *repositories.VocabularyRepository,apiBaseURL string) *VocabularyService {
 	return &VocabularyService{repo: repo,apiBaseURL: apiBaseURL}
 }
@@ -37,15 +35,18 @@ func (s *VocabularyService) GetWordOfTheDay() (*models.Vocabulary, error) {
 	return s.repo.GetRandom()
 }
 
-
 func (s *VocabularyService) FetchAndStore(word, sourceLang, targetLang string) (string, string, error) {
     apiKey := os.Getenv("GEMINI_API_KEY")
-    url := fmt.Sprintf("%s/v1beta/models/gemini-1.5-flash:generateContent?key=%s", s.apiBaseURL, apiKey)
+    if apiKey == "" {
+        return "", "", fmt.Errorf("GEMINI_API_KEY not set")
+    }
+
+    
+    url := fmt.Sprintf("%s/v1/models/gemini-2.5-flash:generateContent?key=%s", s.apiBaseURL, apiKey)
 
     
     prompt := fmt.Sprintf("Translate the word '%s' from %s to %s. Respond with only the translated word.", word, sourceLang, targetLang)
     reqBody := map[string]interface{}{
-        "model": "gemini-1.5-flash",
         "contents": []map[string]interface{}{
             {"role": "user", "parts": []map[string]string{{"text": prompt}}},
         },
@@ -58,16 +59,21 @@ func (s *VocabularyService) FetchAndStore(word, sourceLang, targetLang string) (
     }
     defer resp.Body.Close()
 
+    raw, _ := io.ReadAll(resp.Body)
+    // log.Printf("Gemini translation raw response: %s", string(raw))
+
     var gResp geminiResponse
-    if err := json.NewDecoder(resp.Body).Decode(&gResp); err != nil {
-        return "", "", fmt.Errorf("decode error: %w", err)
+    if err := json.Unmarshal(raw, &gResp); err != nil {
+        return "", "", fmt.Errorf("decode error: %w, body: %s", err, raw)
+    }
+    if len(gResp.Candidates) == 0 || len(gResp.Candidates[0].Content.Parts) == 0 {
+        return "", "", fmt.Errorf("Gemini returned no translation for '%s'", word)
     }
     translation := gResp.Candidates[0].Content.Parts[0].Text
 
     // --- Example sentence ---
     exPrompt := fmt.Sprintf("Give me a simple example sentence using '%s' in %s.", translation, targetLang)
     exReq := map[string]interface{}{
-        "model": "gemini-1.5-flash",
         "contents": []map[string]interface{}{
             {"role": "user", "parts": []map[string]string{{"text": exPrompt}}},
         },
@@ -79,19 +85,22 @@ func (s *VocabularyService) FetchAndStore(word, sourceLang, targetLang string) (
     }
     defer exResp.Body.Close()
 
+    exRaw, _ := io.ReadAll(exResp.Body)
+    // log.Printf("Gemini example raw response: %s", string(exRaw))
+
     var exRespObj geminiResponse
-    if err := json.NewDecoder(exResp.Body).Decode(&exRespObj); err != nil {
-        return translation, "", fmt.Errorf("decode error: %w", err)
+    if err := json.Unmarshal(exRaw, &exRespObj); err != nil {
+        return translation, "", fmt.Errorf("decode error: %w, body: %s", err, exRaw)
+    }
+    if len(exRespObj.Candidates) == 0 || len(exRespObj.Candidates[0].Content.Parts) == 0 {
+        return translation, "", fmt.Errorf("Gemini returned no example for '%s'", translation)
     }
     example := exRespObj.Candidates[0].Content.Parts[0].Text
 
-    
+    // --- Store in DB ---
     if err := s.repo.Insert(word, translation, example); err != nil {
         return translation, example, fmt.Errorf("db insert failed: %w", err)
     }
 
     return translation, example, nil
 }
-
-
-

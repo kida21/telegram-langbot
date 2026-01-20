@@ -167,28 +167,36 @@ func (h *Handler) handleSetLanguage(bot *tgbotapi.BotAPI, update tgbotapi.Update
 }
 
 
-func (h *Handler) handleImportWord(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-    args := strings.Fields(update.Message.Text)
-    if len(args) < 3 {
-        bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID,
-            "Usage: /importword <word> <source-lang> <target-lang>. Example: /importword hello en es"))
-        return
-    }
+func (h *Handler) handleImportWord(bot *tgbotapi.BotAPI,update tgbotapi.Update) {
+	args := strings.Fields(update.Message.Text)
 
-    word := args[1]
-    source := args[2]
-    target := args[3]
+	if len(args) < 4 {
+		bot.Send(tgbotapi.NewMessage(
+			update.Message.Chat.ID,
+			"Usage: /importword <word> <source-lang> <target-lang>",
+		))
+		return
+	}
 
-   translation, example, err := h.vocabService.FetchAndStore(word, source, target)
-    if err != nil {
-       bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Error importing word: "+err.Error()))
-      return
-     }
-   msg := fmt.Sprintf(
-       "Word '%s' imported successfully: %s (%s → %s).\nExample: %s",
-           word, translation, source, target, example,
-      )
-    
-	  bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msg))
+	word := args[1]
+	source := args[2]
+	target := args[3]
 
- }
+	translation, example, err :=
+		h.vocabService.FetchAndStore(word, source, target)
+
+	if err != nil {
+		bot.Send(tgbotapi.NewMessage(
+			update.Message.Chat.ID,
+			"Error importing word: "+err.Error(),
+		))
+		return
+	}
+
+	msg := fmt.Sprintf(
+		"Word imported successfully\n\nWord: %s\nTranslation: %s (%s → %s)\nExample: %s",
+		word, translation, source, target, example,
+	)
+
+	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msg))
+}

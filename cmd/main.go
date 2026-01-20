@@ -30,8 +30,8 @@ func main() {
 	quizRepo := repositories.NewQuizRepository(db.DB)
 	progressRepo := repositories.NewProgressRepository(db.DB)
 
+  
 
-	
 	userService := services.NewUserService(userRepo)
 	vocabService := services.NewVocabularyService(vocabRepo,cfg.Api_url)
 	quizService := services.NewQuizService(quizRepo)

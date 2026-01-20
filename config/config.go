@@ -23,7 +23,8 @@ func LoadConfig() *Config {
 		DBPass: os.Getenv("DB_PASS"),
 		DBName: os.Getenv("DB_NAME"),
 		Gemini_key: os.Getenv("GEMINI_API_KEY"),
-		Api_url: os.Getenv("API_BASE_URL"),
+		Api_url: os.Getenv("API_URL"),
+		
 	}
 }
 

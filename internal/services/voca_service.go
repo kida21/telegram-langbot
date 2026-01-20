@@ -97,7 +97,7 @@ func (s *VocabularyService) FetchAndStore(word, sourceLang, targetLang string) (
     }
     example := exRespObj.Candidates[0].Content.Parts[0].Text
 
-    // --- Store in DB ---
+    
     if err := s.repo.Insert(word, translation, example); err != nil {
         return translation, example, fmt.Errorf("db insert failed: %w", err)
     }

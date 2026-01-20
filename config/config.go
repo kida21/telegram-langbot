@@ -11,7 +11,8 @@ type Config struct {
 	DBUser string
 	DBPass string
 	DBName string
-	Libretranslate_Url string
+	Gemini_key string
+	Api_url string
 }
 
 func LoadConfig() *Config {
@@ -21,7 +22,8 @@ func LoadConfig() *Config {
 		DBUser: os.Getenv("DB_USER"),
 		DBPass: os.Getenv("DB_PASS"),
 		DBName: os.Getenv("DB_NAME"),
-		Libretranslate_Url: os.Getenv("LIBRETRANSLATE_URL"),
+		Gemini_key: os.Getenv("GEMINI_API_KEY"),
+		Api_url: os.Getenv("API_BASE_URL"),
 	}
 }
 

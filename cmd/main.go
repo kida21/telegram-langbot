@@ -33,7 +33,7 @@ func main() {
 
 	
 	userService := services.NewUserService(userRepo)
-	vocabService := services.NewVocabularyService(vocabRepo,cfg.Libretranslate_Url)
+	vocabService := services.NewVocabularyService(vocabRepo,cfg.Api_url)
 	quizService := services.NewQuizService(quizRepo)
 	progressService := services.NewProgressService(progressRepo)
 

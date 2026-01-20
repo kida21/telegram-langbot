@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"log"
+	
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -180,13 +180,15 @@ func (h *Handler) handleImportWord(bot *tgbotapi.BotAPI, update tgbotapi.Update)
     target := args[3]
 
    translation, example, err := h.vocabService.FetchAndStore(word, source, target)
-   if err != nil {
-      bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Error importing word: "+err.Error()))
+    if err != nil {
+       bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Error importing word: "+err.Error()))
       return
-   }
+     }
+   msg := fmt.Sprintf(
+       "Word '%s' imported successfully: %s (%s → %s).\nExample: %s",
+           word, translation, source, target, example,
+      )
+    
+	  bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msg))
 
-    bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID,
-      fmt.Sprintf("Word '%s' imported successfully: %s (%s → %s).\nExample: %s",
-        word, translation, source, target, example)))
-		log.Printf("translation: %s and example : %s",translation,example)
  }

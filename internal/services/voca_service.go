@@ -4,9 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log"
 	"net/http"
+	"os"
 
 	"github.com/kida21/telegram-langbot/internal/models"
 	"github.com/kida21/telegram-langbot/internal/repositories"
@@ -17,16 +16,17 @@ type VocabularyService struct {
 	apiBaseURL string
 
 }
-type libreTranslateRequest struct {
-    Q      string `json:"q"`
-    Source string `json:"source"`
-    Target string `json:"target"`
-    Format string `json:"format"`
+
+type geminiResponse struct {
+    Candidates []struct {
+        Content struct {
+            Parts []struct {
+                Text string `json:"text"`
+            } `json:"parts"`
+        } `json:"content"`
+    } `json:"candidates"`
 }
 
-type libreTranslateResponse struct {
-    TranslatedText string `json:"translatedText"`
-}
 
 
 func NewVocabularyService(repo *repositories.VocabularyRepository,apiBaseURL string) *VocabularyService {
@@ -38,62 +38,60 @@ func (s *VocabularyService) GetWordOfTheDay() (*models.Vocabulary, error) {
 }
 
 
-
-
-
 func (s *VocabularyService) FetchAndStore(word, sourceLang, targetLang string) (string, string, error) {
-    // Translate the word itself
-    reqBody := libreTranslateRequest{
-        Q:      word,
-        Source: sourceLang,
-        Target: targetLang,
-        Format: "text",
+    apiKey := os.Getenv("GEMINI_API_KEY")
+    url := fmt.Sprintf("%s/v1beta/models/gemini-1.5-flash:generateContent?key=%s", s.apiBaseURL, apiKey)
+
+    
+    prompt := fmt.Sprintf("Translate the word '%s' from %s to %s. Respond with only the translated word.", word, sourceLang, targetLang)
+    reqBody := map[string]interface{}{
+        "model": "gemini-1.5-flash",
+        "contents": []map[string]interface{}{
+            {"role": "user", "parts": []map[string]string{{"text": prompt}}},
+        },
     }
 
     bodyBytes, _ := json.Marshal(reqBody)
-    resp, err := http.Post(s.apiBaseURL+"/translate", "application/json", bytes.NewBuffer(bodyBytes))
+    resp, err := http.Post(url, "application/json", bytes.NewBuffer(bodyBytes))
     if err != nil {
-        return "", "", fmt.Errorf("translation request failed: %w", err)
+        return "", "", fmt.Errorf("gemini request failed: %w", err)
     }
     defer resp.Body.Close()
 
-    raw, _ := io.ReadAll(resp.Body)
-    log.Printf("Raw translation response: %s", string(raw))
-
-    var ltResp libreTranslateResponse
-    if err := json.Unmarshal(raw, &ltResp); err != nil {
-        return "", "", fmt.Errorf("decode error: %w, body: %s", err, raw)
+    var gResp geminiResponse
+    if err := json.NewDecoder(resp.Body).Decode(&gResp); err != nil {
+        return "", "", fmt.Errorf("decode error: %w", err)
     }
-    translation := ltResp.TranslatedText
+    translation := gResp.Candidates[0].Content.Parts[0].Text
 
-    // Translate an example sentence
-    exampleSentence := fmt.Sprintf("%s, how are you?", word)
-    exReq := libreTranslateRequest{
-        Q:      exampleSentence,
-        Source: sourceLang,
-        Target: targetLang,
-        Format: "text",
+    // --- Example sentence ---
+    exPrompt := fmt.Sprintf("Give me a simple example sentence using '%s' in %s.", translation, targetLang)
+    exReq := map[string]interface{}{
+        "model": "gemini-1.5-flash",
+        "contents": []map[string]interface{}{
+            {"role": "user", "parts": []map[string]string{{"text": exPrompt}}},
+        },
     }
     exBody, _ := json.Marshal(exReq)
-    exResp, err := http.Post(s.apiBaseURL+"/translate", "application/json", bytes.NewBuffer(exBody))
+    exResp, err := http.Post(url, "application/json", bytes.NewBuffer(exBody))
     if err != nil {
         return translation, "", fmt.Errorf("example request failed: %w", err)
     }
     defer exResp.Body.Close()
 
-    exRaw, _ := io.ReadAll(exResp.Body)
-    log.Printf("Raw example response: %s", string(exRaw))
-
-    var exLtResp libreTranslateResponse
-    if err := json.Unmarshal(exRaw, &exLtResp); err != nil {
-        return translation, "", fmt.Errorf("decode error: %w, body: %s", err, exRaw)
+    var exRespObj geminiResponse
+    if err := json.NewDecoder(exResp.Body).Decode(&exRespObj); err != nil {
+        return translation, "", fmt.Errorf("decode error: %w", err)
     }
-    example := exLtResp.TranslatedText
+    example := exRespObj.Candidates[0].Content.Parts[0].Text
 
-    // Store in DB
+    
     if err := s.repo.Insert(word, translation, example); err != nil {
         return translation, example, fmt.Errorf("db insert failed: %w", err)
     }
 
     return translation, example, nil
 }
+
+
+

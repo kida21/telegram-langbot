@@ -3,8 +3,8 @@ services:
     build: .
     container_name: telegram-langbot
     depends_on:
-      - libretranslate
-      - db
+       db:
+        condition: service_healthy
     env_file:
       - ./.env
       
@@ -22,31 +22,13 @@ services:
       - db_data:/var/lib/postgresql/data
     networks:
       - botnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
  
-  libretranslate:
-    image: libretranslate/libretranslate:v1.8.3
-    container_name: libretranslate
-    command:
-      - --load-only
-      - en,es,fr,de,it,ja
-      - --threads
-      - "4"
-      - --debug
-    ports:
-      - "5000:5000"
-    volumes:
-      - libretranslate-data:/home/libretranslate/.local
-    restart: unless-stopped
-    networks:
-      - botnet
-    dns:
-      - 1.1.1.1
-      - 8.8.8.8
-
-
-
-
-
+  
 networks:
   botnet:
     driver: bridge

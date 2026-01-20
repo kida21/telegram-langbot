@@ -16,7 +16,8 @@ A production-grade Telegram bot for vocabulary learning, built in Go with a laye
 
 ## 🛠️ Architecture
 
-- Go backend with clean layering:  
+- Go backend with clean layering:
+  - `bot` -> for bootstraping
   - `repository` → database access  
   - `service` → translation + example generation  
   - `handler` → Telegram command handling  

@@ -1,6 +1,6 @@
-# Telegram Language Learning Bot
+# Telegram Language Translation Bot
 
-A production-grade Telegram bot for vocabulary learning, built in Go with a layered architecture (repository → service → handler). It supports importing words, translating them into target languages, and generating example sentences using Google Gemini 2.5 API.
+A production-grade Telegram bot for Language Translation , built in Go with a layered architecture (repository → service → handler). It supports importing words, translating them into target languages, and generating example sentences using Google Gemini 2.5 API.
 
 ---
 

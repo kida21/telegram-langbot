@@ -21,6 +21,7 @@ func InitDatabase(cfg *config.Config) {
 	err = DB.AutoMigrate(
 		&models.User{},
 		&models.Vocabulary{},
+		&models.Translation{},
 		
 	)
 	if err != nil {

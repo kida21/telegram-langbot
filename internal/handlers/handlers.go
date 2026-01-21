@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"fmt"
-	
+	"log"
+
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -24,18 +25,24 @@ func NewHandler(us *services.UserService, vs *services.VocabService) *Handler {
 }
 
 func (h *Handler) HandleUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	
+	log.Printf("Received update: %+v", update)
+
+	// Handle inline keyboard callbacks first
 	if update.CallbackQuery != nil {
+		log.Printf("Handling callback query: %+v", update.CallbackQuery)
 		h.handleCallback(bot, update)
 		return
 	}
 
+	// Handle normal messages
 	if update.Message == nil {
+		log.Println("Update has no message and no callback query.")
 		return
 	}
 
 	cmd := update.Message.Command()
 	if cmd != "" {
+		log.Printf("Handling command: %s", cmd)
 		switch cmd {
 		case "start":
 			h.handleStart(bot, update)
@@ -44,13 +51,17 @@ func (h *Handler) HandleUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		case "history":
 			h.handleHistory(bot, update)
 		default:
+			log.Printf("Unknown command: %s", cmd)
 			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command. Try /importword or /history."))
 		}
 		return
 	}
 
+	// Free‑form text → offer translation options
+	log.Printf("Handling free text: %s", update.Message.Text)
 	h.handleText(bot, update)
 }
+
 
 
 
@@ -122,27 +133,36 @@ func (h *Handler) handleImportWord(bot *tgbotapi.BotAPI, update tgbotapi.Update)
 }
 
 func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-    data := update.CallbackQuery.Data
-    parts := strings.SplitN(data, ":", 3)
-    if len(parts) != 3 || parts[0] != "translate" {
-        return
-    }
+	data := update.CallbackQuery.Data
+	log.Printf("Callback data: %s", data)
 
-    targetLang := parts[1]
-    text := parts[2]
-    userID := update.CallbackQuery.From.ID
+	parts := strings.SplitN(data, ":", 3)
+	if len(parts) != 3 || parts[0] != "translate" {
+		log.Println("Invalid callback data format.")
+		return
+	}
 
-    translation, err := h.vocabService.TranslateAndLog(userID, text, targetLang)
-    if err != nil {
-        bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Error: "+err.Error()))
-        return
-    }
+	targetLang := parts[1]
+	text := parts[2]
+	userID := update.CallbackQuery.From.ID
 
-    msg := fmt.Sprintf("Translation into %s:\n%s", targetLang, translation)
-    bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, msg))
-    bot.Request(tgbotapi.NewCallback(update.CallbackQuery.ID, "Translated!"))
+	log.Printf("Translating for user %d: '%s' → %s", userID, text, targetLang)
 
+	translation, err := h.vocabService.TranslateAndLog(userID, text, targetLang)
+	if err != nil {
+		log.Printf("Translation error: %v", err)
+		bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Error: "+err.Error()))
+		return
+	}
+
+	msg := fmt.Sprintf("Translation into %s:\n%s", targetLang, translation)
+	log.Printf("Sending translation: %s", msg)
+	bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, msg))
+
+	// Acknowledge the callback so Telegram stops showing the "loading" spinner
+	bot.Request(tgbotapi.NewCallback(update.CallbackQuery.ID, "Translated!"))
 }
+
 
 
 func (h *Handler) handleHistory(bot *tgbotapi.BotAPI, update tgbotapi.Update) {

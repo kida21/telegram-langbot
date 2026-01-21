@@ -140,6 +140,8 @@ func (h *Handler) handleCallback(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
     msg := fmt.Sprintf("Translation into %s:\n%s", targetLang, translation)
     bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, msg))
+    bot.Request(tgbotapi.NewCallback(update.CallbackQuery.ID, "Translated!"))
+
 }
 
 

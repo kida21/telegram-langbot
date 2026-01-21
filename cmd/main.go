@@ -27,18 +27,16 @@ func main() {
 	
 	userRepo := repositories.NewUserRepository(db.DB)
 	vocabRepo := repositories.NewVocabularyRepository(db.DB)
-	quizRepo := repositories.NewQuizRepository(db.DB)
-	progressRepo := repositories.NewProgressRepository(db.DB)
+	
 
   
 
 	userService := services.NewUserService(userRepo)
 	vocabService := services.NewVocabularyService(vocabRepo,cfg.Api_url)
-	quizService := services.NewQuizService(quizRepo)
-	progressService := services.NewProgressService(progressRepo)
+	
 
 	
-	handler := handlers.NewHandler(userService, vocabService, quizService, progressService)
+	handler := handlers.NewHandler(userService, vocabService)
 
 	
 	b := bot.NewBot(api, handler)

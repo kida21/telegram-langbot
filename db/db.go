@@ -21,9 +21,7 @@ func InitDatabase(cfg *config.Config) {
 	err = DB.AutoMigrate(
 		&models.User{},
 		&models.Vocabulary{},
-		&models.Quiz{},
-		&models.UserProgress{},
-		&models.Achievement{},
+		
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)

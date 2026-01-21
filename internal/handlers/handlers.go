@@ -12,16 +12,14 @@ import (
 type Handler struct {
 	userService     *services.UserService
 	vocabService    *services.VocabularyService
-	quizService     *services.QuizService
-	progressService *services.ProgressService
+	
 }
 
-func NewHandler(us *services.UserService, vs *services.VocabularyService, qs *services.QuizService, ps *services.ProgressService) *Handler {
+func NewHandler(us *services.UserService, vs *services.VocabularyService) *Handler {
 	return &Handler{
 		userService:     us,
 		vocabService:    vs,
-		quizService:     qs,
-		progressService: ps,
+		
 	}
 }
 
@@ -35,13 +33,7 @@ func (h *Handler) HandleUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
         switch cmd {
         case "start":
             h.handleStart(bot, update)
-        case "word":
-            h.handleWord(bot, update)
-        case "quiz":
-            h.handleQuiz(bot, update)
-        case "progress":
-            h.handleProgress(bot, update)
-		case "setlanguage":
+        case "setlanguage":
             h.handleSetLanguage(bot, update)
 		case "importword":
 			h.handleImportWord(bot,update)
@@ -98,35 +90,10 @@ func (h *Handler) handleStart(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	}
 }
 
-func (h *Handler) handleWord(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	vocab, err := h.vocabService.GetWordOfTheDay()
-	if err != nil {
-		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "No vocabulary found."))
-		return
-	}
-	text := fmt.Sprintf("Word: %s\nTranslation: %s\nExample: %s", vocab.Word, vocab.Translation, vocab.Example)
-	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, text))
-}
 
-func (h *Handler) handleQuiz(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	quiz, err := h.quizService.GetRandomQuiz()
-	if err != nil {
-		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "No quizzes available."))
-		return
-	}
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, quiz.Question+"\nOptions: "+quiz.Options)
-	bot.Send(msg)
-}
 
-func (h *Handler) handleProgress(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	attempts, correct, accuracy, err := h.progressService.GetUserStats(update.Message.From.ID)
-	if err != nil {
-		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Error fetching progress."))
-		return
-	}
-	text := fmt.Sprintf("Attempts: %d\nCorrect: %d\nAccuracy: %.2f%%", attempts, correct, accuracy)
-	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, text))
-}
+
+
 
 func (h *Handler) handleText(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
     lang := strings.TrimSpace(update.Message.Text)

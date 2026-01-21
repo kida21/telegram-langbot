@@ -11,11 +11,11 @@ import (
 
 type Handler struct {
 	userService     *services.UserService
-	vocabService    *services.VocabularyService
+	vocabService    *services.VocabService
 	
 }
 
-func NewHandler(us *services.UserService, vs *services.VocabularyService) *Handler {
+func NewHandler(us *services.UserService, vs *services.VocabService) *Handler {
 	return &Handler{
 		userService:     us,
 		vocabService:    vs,
@@ -134,36 +134,23 @@ func (h *Handler) handleSetLanguage(bot *tgbotapi.BotAPI, update tgbotapi.Update
 }
 
 
-func (h *Handler) handleImportWord(bot *tgbotapi.BotAPI,update tgbotapi.Update) {
-	args := strings.Fields(update.Message.Text)
+func (h *Handler) handleImportWord(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+    text := update.Message.CommandArguments()
+    if text == "" {
+        bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Usage: /importword <text>"))
+        return
+    }
 
-	if len(args) < 4 {
-		bot.Send(tgbotapi.NewMessage(
-			update.Message.Chat.ID,
-			"Usage: /importword <word> <source-lang> <target-lang>",
-		))
-		return
-	}
-
-	word := args[1]
-	source := args[2]
-	target := args[3]
-
-	translation, example, err :=
-		h.vocabService.FetchAndStore(word, source, target)
-
-	if err != nil {
-		bot.Send(tgbotapi.NewMessage(
-			update.Message.Chat.ID,
-			"Error importing word: "+err.Error(),
-		))
-		return
-	}
-
-	msg := fmt.Sprintf(
-		"Word imported successfully\n\nWord: %s\nTranslation: %s (%s → %s)\nExample: %s",
-		word, translation, source, target, example,
-	)
-
-	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msg))
+    msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Which language would you like to translate into?")
+    keyboard := tgbotapi.NewInlineKeyboardMarkup(
+        tgbotapi.NewInlineKeyboardRow(
+            tgbotapi.NewInlineKeyboardButtonData("Spanish", "translate:Spanish:"+text),
+            tgbotapi.NewInlineKeyboardButtonData("Japanese", "translate:Japanese:"+text),
+            tgbotapi.NewInlineKeyboardButtonData("French", "translate:French:"+text),
+            tgbotapi.NewInlineKeyboardButtonData("German", "translate:German:"+text),
+        ),
+    )
+    msg.ReplyMarkup = keyboard
+    bot.Send(msg)
 }
+

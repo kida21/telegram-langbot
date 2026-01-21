@@ -26,13 +26,13 @@ func main() {
 
 	
 	userRepo := repositories.NewUserRepository(db.DB)
-	vocabRepo := repositories.NewVocabularyRepository(db.DB)
+	translationRepo := repositories.NewTranslationRepository(db.DB)
 	
 
   
 
 	userService := services.NewUserService(userRepo)
-	vocabService := services.NewVocabularyService(vocabRepo,cfg.Api_url)
+	vocabService := services.NewVocabService(translationRepo,cfg.Api_url)
 	
 
 	

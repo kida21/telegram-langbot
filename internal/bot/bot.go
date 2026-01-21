@@ -26,8 +26,6 @@ func (b *Bot) Start() {
     updates := b.api.GetUpdatesChan(u)
 
 	for update := range updates {
-		if update.Message != nil {
-			b.handler.HandleUpdate(b.api, update)
-		}
-	}
+		b.handler.HandleUpdate(b.api, update)
+	 }
 }

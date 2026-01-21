@@ -22,8 +22,8 @@ func (b *Bot) Start() {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-
-	updates := b.api.GetUpdatesChan(u)
+    u.AllowedUpdates = []string{"message", "callback_query"}
+    updates := b.api.GetUpdatesChan(u)
 
 	for update := range updates {
 		if update.Message != nil {

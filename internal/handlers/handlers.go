@@ -25,41 +25,44 @@ func NewHandler(us *services.UserService, vs *services.VocabService) *Handler {
 }
 
 func (h *Handler) HandleUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	log.Printf("Received update: %+v", update)
+    log.Printf("Received update: %+v", update)
 
-	// Handle inline keyboard callbacks first
-	if update.CallbackQuery != nil {
-		log.Printf("Handling callback query: %+v", update.CallbackQuery)
-		h.handleCallback(bot, update)
-		return
-	}
+    // Handle inline keyboard callbacks
+    if update.CallbackQuery != nil {
+        log.Printf("Callback query received: %+v", update.CallbackQuery)
+        h.handleCallback(bot, update)
+        return
+    }
 
-	// Handle normal messages
-	if update.Message == nil {
-		log.Println("Update has no message and no callback query.")
-		return
-	}
+    // Handle normal messages
+    if update.Message != nil {
+        log.Printf("Message received: %+v", update.Message)
 
-	cmd := update.Message.Command()
-	if cmd != "" {
-		log.Printf("Handling command: %s", cmd)
-		switch cmd {
-		case "start":
-			h.handleStart(bot, update)
-		case "importword":
-			h.handleImportWord(bot, update)
-		case "history":
-			h.handleHistory(bot, update)
-		default:
-			log.Printf("Unknown command: %s", cmd)
-			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command. Try /importword or /history."))
-		}
-		return
-	}
+        if update.Message.IsCommand() {
+            cmd := update.Message.Command()
+            log.Printf("Handling command: %s", cmd)
 
-	// Free‑form text → offer translation options
-	log.Printf("Handling free text: %s", update.Message.Text)
-	h.handleText(bot, update)
+            switch cmd {
+            case "start":
+                h.handleStart(bot, update)
+            case "importword":
+                h.handleImportWord(bot, update)
+            case "history":
+                h.handleHistory(bot, update)
+            default:
+                log.Printf("Unknown command: %s", cmd)
+                bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID,
+                    "Unknown command. Try /importword or /history."))
+            }
+        } else {
+            log.Printf("Handling free text: %s", update.Message.Text)
+            h.handleText(bot, update)
+        }
+        return
+    }
+
+    // If neither message nor callback query
+    log.Println("Update has no message and no callback query.")
 }
 
 

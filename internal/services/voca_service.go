@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kida21/telegram-langbot/internal/models"
 	"github.com/kida21/telegram-langbot/internal/repositories"
 )
 
@@ -64,4 +65,8 @@ func (s *VocabService) TranslateAndLog(userID int64, sourceText, targetLang stri
     }
 
     return translation, nil
+}
+
+func (s *VocabService) GetHistory(userID int64, limit int) ([]models.Translation, error) {
+    return s.repo.GetHistory(userID, limit)
 }
